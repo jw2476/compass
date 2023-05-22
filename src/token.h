@@ -36,6 +36,8 @@ typedef struct bracket_t {
 	bracket_side_t side;
 } bracket_t;
 
+char bracket_as_char(bracket_t* bracket);
+
 typedef enum token_type_t {
 	TOKEN_IDENTIFIER,
 	TOKEN_LITERAL,
@@ -61,3 +63,4 @@ typedef struct token_t {
 } token_t;
 
 token_t tokenize(str_t* code);
+void token_print(token_t* token);

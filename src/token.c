@@ -20,6 +20,11 @@ void bracket_print(bracket_t* bracket) {
 	
 }
 
+char bracket_as_char(bracket_t* bracket) {
+	u8 n = bracket->kind | (bracket->side << 2);
+	return *BRACKETS[n];
+}
+
 void token_print(token_t* token) {
 	static const char* TOKEN_TYPES[] = { "IDENT", "LITERAL", "BRACKET", "DCOLON", "SCOLON", "EQ", "DOLLAR", "ARROW", "PIPE", "EOF" };
 	

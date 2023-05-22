@@ -1,4 +1,5 @@
-TestType<A, B, C, D, SeventyTwo>
+[Some T | None]
+
 
 Option<T> :: [Some T | None]
 

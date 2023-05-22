@@ -48,7 +48,6 @@ void str_print(str_t* base) {
 	arena_t scratch = arena_new();
 	fputs(str_cstr(&scratch, base), stdout);
 	arena_destroy(&scratch);
-
 }
 
 str_t str_from_ascii(arena_t* arena, u8_array_t* ascii) {
