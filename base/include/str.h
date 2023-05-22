@@ -6,6 +6,8 @@
 #include "arena.h"
 #include "array.h"
 
+typedef struct u8_array_t u8_array_t;
+
 typedef struct str_t {
 	char* data;
 	usize size;

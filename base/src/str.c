@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdio.h>
 
+MAKE_STD_ARRAYS();
+
 str_t str_lit(arena_t* arena, const char* base) {
 	usize size = strlen(base);
 	

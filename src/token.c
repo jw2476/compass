@@ -31,6 +31,7 @@ void token_print(token_t* token) {
 	} else if (token->type == TOKEN_BRACKET) {
 		bracket_print(&token->data.bracket);
 	}
+	printf("\n");
 }
 
 char to_lower(char c) {

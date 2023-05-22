@@ -1,3 +1,5 @@
+TestType<A, B, C, D, SeventyTwo>
+
 Option<T> :: [Some T | None]
 
 unwrap<T> :: Option<T> -> T

@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+MAKE_STD_ARRAYS();
+
 u8_array_t file_read(arena_t* arena, str_t path) {
 	arena_t scratch = arena_new();
 
@@ -15,7 +17,7 @@ u8_array_t file_read(arena_t* arena, str_t path) {
 	usize size = ftell(f);
 	fseek(f, 0, SEEK_SET);
 
-	u8_array_t array = ARRAY_NEW(u8, arena, size);
+	u8_array_t array = u8_array_new(arena, size, sizeof(1));
 	fread(array.data, size, 1, f);
 	fclose(f);
 
