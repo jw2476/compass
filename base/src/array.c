@@ -11,13 +11,13 @@ array_t array_new(arena_t* arena, usize size, usize sizePerItem) {
 
 array_t array_view(array_t* base, usize from, usize to) {
 	array_t array;
-	array.data = &base[from * base->sizePerItem];
-	array.size = (to - from) * base->sizePerItem;
+	array.data = &base->data[from * base->sizePerItem];
+	array.size = (to - from);
 
 	return array;
 }
 
 void array_skip(array_t* base, usize n) {
-	base->data = &base->data[n*base->sizePerItem];
-	base->size -= n * base->sizePerItem;
+	base->data = &base->data[n * base->sizePerItem];
+	base->size -= n;
 }

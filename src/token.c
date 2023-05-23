@@ -5,7 +5,9 @@
 
 void literal_print(literal_t* literal) {
 	if (literal->type == LITERAL_STRING) {
+		printf("\"");
 		str_print(&literal->data.string);
+		printf("\"");
 	} else if (literal->type == LITERAL_INTEGER) {
 		printf("%lld", literal->data.integer);
 	} else {
@@ -64,6 +66,9 @@ token_t tokenize(str_t* code) {
 	if (str_starts_with(code, str_lit(&arena, "::"))) {
 		str_skip_chars(code, 2);
 		return (token_t){ TOKEN_DOUBLE_COLON, data };
+	} else if (str_starts_with(code, str_lit(&arena, "\n"))) {
+		str_skip_chars(code, 1);
+		return (token_t){ TOKEN_NEWLINE, data };
 	} else if (str_starts_with(code, str_lit(&arena, ":"))) {
 		str_skip_chars(code, 1);
 		return (token_t){ TOKEN_SINGLE_COLON, data };
@@ -92,7 +97,7 @@ token_t tokenize(str_t* code) {
 		return (token_t){ TOKEN_LITERAL, data };
 	} else if (is_alphabetic(code->data[0])) {
 		usize i;
-		for (i = 0; is_alphanumeric(code->data[i]); i++) {}
+		for (i = 0; is_alphanumeric(code->data[i]) || code->data[i] == '_'; i++) {}
 		data.identifier = str_view(code, 0, i);
 
 		str_skip_chars(code, i);

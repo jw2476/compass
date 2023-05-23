@@ -19,6 +19,8 @@ typedef struct literal_t {
 	literal_data_t data;
 } literal_t;
 
+void literal_print(literal_t* literal);
+
 typedef enum bracket_kind_t {
 	BRACKET_ROUND = 0,
 	BRACKET_SQUARE,
@@ -36,6 +38,7 @@ typedef struct bracket_t {
 	bracket_side_t side;
 } bracket_t;
 
+void bracket_print(bracket_t* bracket);
 char bracket_as_char(bracket_t* bracket);
 
 typedef enum token_type_t {
@@ -48,6 +51,7 @@ typedef enum token_type_t {
 	TOKEN_DOLLAR,
 	TOKEN_ARROW,
 	TOKEN_PIPE,
+	TOKEN_NEWLINE,
 	TOKEN_EOF
 } token_type_t;
 
