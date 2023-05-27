@@ -13,6 +13,7 @@ array_t array_view(array_t* base, usize from, usize to) {
 	array_t array;
 	array.data = &base->data[from * base->sizePerItem];
 	array.size = (to - from);
+	array.sizePerItem = base->sizePerItem;
 
 	return array;
 }

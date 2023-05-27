@@ -58,77 +58,91 @@ bool is_alphanumeric(char c) {
 }
 
 token_t tokenize(str_t* code) {
-	token_data_t data;
-	if (code->size == 0) return (token_t){ TOKEN_EOF, data };
+	token_t token;
+	if (code->size == 0) { token.type = TOKEN_EOF; return token; }
 
 	arena_t arena = arena_new();
 	
-	if (str_starts_with(code, str_lit(&arena, "::"))) {
+	if (str_starts_with(code, str_lit(&arena, "//"))) {
+		usize i;
+		for (i = 0; code->data[i] != '\n'; i++) {}
+		str_skip_chars(code, i);
+		token = tokenize(code);
+	} else if (str_starts_with(code, str_lit(&arena, "::"))) {
 		str_skip_chars(code, 2);
-		return (token_t){ TOKEN_DOUBLE_COLON, data };
+		token.type = TOKEN_DOUBLE_COLON;
 	} else if (str_starts_with(code, str_lit(&arena, "\n"))) {
 		str_skip_chars(code, 1);
-		return (token_t){ TOKEN_NEWLINE, data };
+		token.type = TOKEN_NEWLINE;
 	} else if (str_starts_with(code, str_lit(&arena, ":"))) {
 		str_skip_chars(code, 1);
-		return (token_t){ TOKEN_SINGLE_COLON, data };
-	} else if (str_starts_with(code, str_lit(&arena, "="))) {
+		token.type = TOKEN_SINGLE_COLON;
+	} else if (str_starts_with(code, str_lit(&arena, "="))) { 
 		str_skip_chars(code, 1);
-		return (token_t){ TOKEN_EQUALS, data };
+		token.type = TOKEN_EQUALS;
 	} else if (str_starts_with(code, str_lit(&arena, "$"))) {
 		str_skip_chars(code, 1);
-		return (token_t){ TOKEN_DOLLAR, data };
+		token.type = TOKEN_DOLLAR;
 	} else if (str_starts_with(code, str_lit(&arena, "->"))) {
 		str_skip_chars(code, 2);
-		return (token_t){ TOKEN_ARROW, data };
+		token.type = TOKEN_ARROW;
 	} else if (str_starts_with(code, str_lit(&arena, "|"))) {
 		str_skip_chars(code, 1);
-		return (token_t){ TOKEN_PIPE, data };
+		token.type = TOKEN_PIPE;
 	} else if (str_starts_with(code, str_lit(&arena, "\""))) {
 		str_skip_chars(code, 1);
 		usize i;
 		for (i = 0; code->data[i] != '"'; i++) {}
 
-		data.literal.type = LITERAL_STRING;
-		data.literal.data.string = str_view(code, 0, i);
+		token.type = TOKEN_LITERAL;
+		token.data.literal.type = LITERAL_STRING;
 
+		token.data.literal.data.string = str_view(code, 0, i);
 		str_skip_chars(code, i + 1);
-		
-		return (token_t){ TOKEN_LITERAL, data };
 	} else if (is_alphabetic(code->data[0])) {
 		usize i;
 		for (i = 0; is_alphanumeric(code->data[i]) || code->data[i] == '_'; i++) {}
-		data.identifier = str_view(code, 0, i);
+		token.type = TOKEN_IDENTIFIER;
+		token.data.identifier = str_view(code, 0, i);
 
 		str_skip_chars(code, i);
-
-		return (token_t){ TOKEN_IDENTIFIER, data };
 	} else if (is_digit(code->data[0])) {
 		bool isDecimal = false;
 		usize i;
 		for (i = 0; is_digit(code->data[i]) || code->data[i] == '.'; i++) {
 			if (code->data[i] == '.') isDecimal = true;
 		}
+
 		str_t str = str_view(code, 0, i);
+		str_skip_chars(code, i);
 		if (!isDecimal) {
-			data.literal.type = LITERAL_INTEGER;
-			data.literal.data.integer = strtoll(str.data, NULL, 10);
+			token.data.literal.type = LITERAL_INTEGER;
+			token.data.literal.data.integer = strtoll(str.data, NULL, 10);
 		} else {
-			data.literal.type = LITERAL_DECIMAL;
-			data.literal.data.decimal = strtod(str.data, NULL);
+			token.data.literal.type = LITERAL_DECIMAL;
+			token.data.literal.data.decimal = strtod(str.data, NULL);
 		}
-		return (token_t){ TOKEN_LITERAL, data };
+
+		token.type = TOKEN_LITERAL;
 	} else {
+		bool bracket = false;
 		for (usize i = 0; i < 8; i++) {
 			if (code->data[0] == *BRACKETS[i]) {
-				data.bracket.kind = i & 0b11;
-				data.bracket.side = (i & 0b100) >> 2;
+				token.data.bracket.kind = i & 0b11;
+				token.data.bracket.side = (i & 0b100) >> 2;
+				token.type = TOKEN_BRACKET;
 				str_skip_chars(code, 1);
-				return (token_t){ TOKEN_BRACKET, data };
+				bracket = true;
+				break;
 			}
 		}
 
-		str_skip_chars(code, 1);
-		return tokenize(code);
+		if (!bracket) {
+			str_skip_chars(code, 1);
+			token = tokenize(code);
+		}
 	}
+
+	arena_destroy(&arena);
+	return token;
 }

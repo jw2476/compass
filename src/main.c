@@ -16,50 +16,8 @@ MAKE_ARRAY(named_type);
 // u32 or Add<T, T, T>
 typedef struct type_value_t {
 	str_t name;
-	str_array_t generics;
+	type_array_t generics;
 } type_value_t;
-
-void type_value_print(type_value_t* type_value) {
-	str_print(&type_value->name);
-
-	if (type_value->generics.size == 0) return;
-	printf("<");
-	for (usize i = 0; i < type_value->generics.size; i++) {
-		str_print(&type_value->generics.data[i]);
-		if ((i + 1) != type_value->generics.size) printf(", ");
-	}
-	printf(">");
-}
-
-type_value_t type_value_parse(arena_t* arena, token_array_t* tokens) {
-	if (tokens->data[0].type != TOKEN_IDENTIFIER) {
-		CRITICAL("First token of type value isn't identifier");
-	}
-
-	type_value_t type_value;
-	type_value.name = tokens->data[0].data.identifier;
-	token_array_skip(tokens, 1); // Skip IDENT
-
-	bool hasGenerics = tokens->data[0].type == TOKEN_BRACKET && bracket_as_char(&tokens->data[0].data.bracket) == '<';
-	if (!hasGenerics) {
-		type_value.generics = str_array_new(arena, 0, sizeof(str_t));
-		return type_value;
-	}
-
-	token_array_skip(tokens, 1); // Skip '>'
-
-	usize i;
-	for (i = 0; !(tokens->data[i].type == TOKEN_BRACKET && bracket_as_char(&tokens->data[i].data.bracket) == '>'); i++) {}
-
-	type_value.generics = str_array_new(arena, i, sizeof(str_t));
-	for (usize j = 0; j < i; j++) {
-		type_value.generics.data[j] = tokens->data[j].data.identifier;
-	}
-
-	token_array_skip(tokens, i + 1); // Skip generics + '>'
-
-	return type_value;
-}
 
 typedef struct type_function_t {
 	type_t* input;
@@ -94,6 +52,49 @@ typedef struct named_type_t {
 
 void type_print(type_t* type);
 type_t type_parse(arena_t* arena, token_array_t* tokens, bool canBeFunction);
+
+void type_value_print(type_value_t* type_value) {
+	str_print(&type_value->name);
+
+	if (type_value->generics.size == 0) return;
+	printf("<");
+	for (usize i = 0; i < type_value->generics.size; i++) {
+		type_print(&type_value->generics.data[i]);
+		if ((i + 1) != type_value->generics.size) printf(", ");
+	}
+	printf(">");
+}
+
+type_value_t type_value_parse(arena_t* arena, token_array_t* tokens) {
+	if (tokens->data[0].type != TOKEN_IDENTIFIER) {
+		token_print(&tokens->data[0]);
+		CRITICAL("^ First token of type value isn't identifier");
+	}
+
+	type_value_t type_value;
+	type_value.name = tokens->data[0].data.identifier;
+	token_array_skip(tokens, 1); // Skip IDENT
+
+	bool hasGenerics = tokens->data[0].type == TOKEN_BRACKET && bracket_as_char(&tokens->data[0].data.bracket) == '<';
+	if (!hasGenerics) {
+		type_value.generics = type_array_new(arena, 0, sizeof(type_t));
+		return type_value;
+	}
+
+	token_array_skip(tokens, 1); // Skip '>'
+
+	type_value.generics = type_array_new(arena, 128, sizeof(type_t));
+	usize i = 0;
+	while (!(tokens->data[0].type == TOKEN_BRACKET && bracket_as_char(&tokens->data[0].data.bracket) == '>')) {
+		type_value.generics.data[i] = type_parse(arena, tokens, true);
+		i++;
+	}
+
+	token_array_skip(tokens, 1); // Skip '>'
+
+	type_value.generics = type_array_view(&type_value.generics, 0, i);
+	return type_value;
+}
 
 void type_function_print(type_function_t* function_type) {
 	type_print(function_type->input);
@@ -229,10 +230,8 @@ type_t type_parse_enum(arena_t* arena, token_array_t* tokens) {
 				variants.data[i++] = staging;
 				if (tokens->data[0].type == TOKEN_BRACKET && bracket_as_char(&tokens->data[0].data.bracket) == ']') break;
 			}
-
-			token_array_skip(tokens, 1); // Skip '|'
 		} else {
-			CRITICAL("Invalid token in enum");
+			CRITICAL("Incorrectly formatted enum, it should be [VARIANT TYPE | VARIANT TYPE] e.g. [Some T | None]");
 		}
 	}
 	token_array_skip(tokens, 1); // Skip ']'
@@ -347,6 +346,9 @@ type_decl_t type_decl_parse(arena_t* arena, token_array_t* tokens) {
 	
 	if (tokens->data[0].type == TOKEN_BRACKET && bracket_as_char(&tokens->data[0].data.bracket) == '<') {
 		type_decl_parse_generics(arena, tokens, &type_decl);
+	} else {
+		type_decl.generics = str_array_new(arena, 0, sizeof(str_t));
+		type_decl.conditions = type_value_array_new(arena, 0, sizeof(type_value_t));
 	}
 
 	if (tokens->data[0].type != TOKEN_DOUBLE_COLON) {
@@ -368,18 +370,35 @@ void expr_print(expr_t* expression) {
 			printf("$");
 		} else if (expression->data[i].type == TOKEN_LITERAL) {
 			literal_print(&expression->data[i].data.literal);
+		} else if (expression->data[i].type == TOKEN_BRACKET) {
+			bracket_print(&expression->data[i].data.bracket);
 		} else {
 			token_print(&expression->data[i]);
 			CRITICAL("^ Invalid token for expression");
 		}
+		
+		bool isOpeningBracket = expression->data[i].type == TOKEN_BRACKET && expression->data[i].data.bracket.side == BRACKET_OPEN;
+		bool nextIsClosingBracket = expression->data[i+1].type == TOKEN_BRACKET && expression->data[i+1].data.bracket.side == BRACKET_CLOSE;
+		if (!isOpeningBracket && !nextIsClosingBracket) printf(" ");
+	}
+}
 
-		if ((i+1) != expression->size) printf(" ");
+usize expr_get_size(token_array_t* tokens) {
+	usize i = 0;
+	while (true) {
+		if (tokens->data[i].type == TOKEN_IDENTIFIER || tokens->data[i].type == TOKEN_DOLLAR || tokens->data[i].type == TOKEN_LITERAL) { 
+			i++; 
+		} else if (tokens->data[i].type == TOKEN_BRACKET && bracket_as_char(&tokens->data[i].data.bracket) == '(') {
+			token_array_t subExpression = token_array_view(tokens, i+1, tokens->size - (i+1)); 
+			i += 2 + expr_get_size(&subExpression);
+		} else {
+			return i;
+		}
 	}
 }
 
 expr_t expr_parse(token_array_t* tokens) {
-	usize i;
-	for (i = 0; tokens->data[i].type == TOKEN_IDENTIFIER || tokens->data[i].type == TOKEN_DOLLAR || tokens->data[i].type == TOKEN_LITERAL; i++) {}
+	usize i = expr_get_size(tokens);
 	expr_t expr = token_array_view(tokens, 0, i);
 	token_array_skip(tokens, i);
 	return expr;
