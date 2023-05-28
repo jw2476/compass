@@ -24,16 +24,15 @@ static TYPE ## _array_t(*TYPE ## _array_new)(arena_t*, usize, usize) = (void*)ar
 static TYPE ## _array_t(*TYPE ## _array_view)(TYPE ## _array_t*, usize, usize) = (void*)array_view; \
 static void(*TYPE ## _array_skip)(TYPE ## _array_t*, usize) = (void*)array_skip;
 
-#define MAKE_STD_ARRAYS() \
-MAKE_ARRAY(u8); \
-MAKE_ARRAY(u16); \
-MAKE_ARRAY(u32); \
-MAKE_ARRAY(u64); \
-MAKE_ARRAY(usize); \
-MAKE_ARRAY(i8); \
-MAKE_ARRAY(i16); \
-MAKE_ARRAY(i32); \
-MAKE_ARRAY(i64); \
-MAKE_ARRAY(isize); \
-MAKE_ARRAY(f32); \
+MAKE_ARRAY(u8);
+MAKE_ARRAY(u16);
+MAKE_ARRAY(u32);
+MAKE_ARRAY(u64);
+MAKE_ARRAY(usize);
+MAKE_ARRAY(i8);
+MAKE_ARRAY(i16);
+MAKE_ARRAY(i32);
+MAKE_ARRAY(i64);
+MAKE_ARRAY(isize);
+MAKE_ARRAY(f32);
 MAKE_ARRAY(f64);

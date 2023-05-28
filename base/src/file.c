@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-MAKE_STD_ARRAYS();
-
 u8_array_t file_read(arena_t* arena, str_t path) {
 	arena_t scratch = arena_new();
 

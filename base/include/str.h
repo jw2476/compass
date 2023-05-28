@@ -6,12 +6,12 @@
 #include "arena.h"
 #include "array.h"
 
-typedef struct u8_array_t u8_array_t;
-
 typedef struct str_t {
 	char* data;
 	usize size;
 } str_t;
+
+MAKE_ARRAY(str);
 
 str_t str_lit(arena_t* arena, const char* base);
 str_t str_concat(arena_t* arena, str_t* a, str_t* b);

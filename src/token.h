@@ -66,5 +66,7 @@ typedef struct token_t {
 	token_data_t data;
 } token_t;
 
+MAKE_ARRAY(token);
+
 token_t tokenize(str_t* code);
 void token_print(token_t* token);
